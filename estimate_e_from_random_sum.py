@@ -16,15 +16,20 @@ def generate_until_sum_exceeds_one():
     return numbers, total, len(numbers)
 
 def generate_multiple_rounds(n):
-    result = []
+    """메모리 효율적으로 라운드별 count만 수집"""
+    counts = []
     for _ in range(n):
-        numbers, total, count = generate_until_sum_exceeds_one()
-        result.append({
-            "numbers": numbers,
-            "sum": total,
-            "count": count
-        })
-    return result
+        _, _, count = generate_until_sum_exceeds_one()
+        counts.append(count)
+    return counts
+
+def calculate_average_count(n):
+    """메모리 최적화: count 리스트를 저장하지 않고 바로 합산"""
+    total_counts = Decimal("0")
+    for _ in range(n):
+        _, _, count = generate_until_sum_exceeds_one()
+        total_counts += Decimal(count)
+    return total_counts / Decimal(n)
 
 def format_decimal_with_spaces(d: Decimal, precision=50):
     s = f"{d:.{precision}f}"  # 고정소수점 문자열
@@ -40,18 +45,8 @@ try:
     if n <= 0:
         raise ValueError("양의 정수를 입력하세요.")
 
-    rounds = generate_multiple_rounds(n)
-
-    total_counts = Decimal("0")
-    for i, r in enumerate(rounds, 1):
-        # print(f"[{i}회차]")
-        # print("  뽑은 수들:", r["numbers"])
-        # print("  총합:", r["sum"])
-        # print("  뽑은 횟수:", r["count"])
-        # print()
-        total_counts += Decimal(r["count"])
-
-    average_count = total_counts / Decimal(n)
+    # 메모리 최적화: count 리스트를 저장하지 않고 바로 합산
+    average_count = calculate_average_count(n)
     e = Decimal("2.71828182845904523536028747135266249775724709369995")  # 50자리 고정 e
     absolute_error = abs(average_count - e)
     relative_error = (absolute_error / e) * 100

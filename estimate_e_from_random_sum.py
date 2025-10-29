@@ -1,5 +1,6 @@
 import random
 import sys
+import time
 from decimal import Decimal, getcontext
 
 # 소수점 정밀도 설정 (최대 52자리 이상)
@@ -27,6 +28,7 @@ def generate_multiple_rounds(n):
 def calculate_average_count(n, show_progress=True):
     """메모리 최적화: count 리스트를 저장하지 않고 바로 합산"""
     total_counts = Decimal("0")
+    start_time = time.time()
     
     # 진행률 표시를 위한 설정
     update_interval = max(1, n // 100) if n > 100 else 1  # 최대 100번 업데이트
@@ -37,19 +39,31 @@ def calculate_average_count(n, show_progress=True):
         
         # 진행률 표시
         if show_progress and (i + 1) % update_interval == 0 or i + 1 == n:
+            elapsed_time = time.time() - start_time
             progress = ((i + 1) / n) * 100
             completed = i + 1
+            
+            # 예상 남은 시간 계산
+            if completed > 0:
+                eta_seconds = (elapsed_time / completed) * (n - completed)
+                eta_str = f", 예상 남은 시간: {format_time(eta_seconds)}"
+            else:
+                eta_str = ""
+            
             bar_length = 40
             filled_length = int(bar_length * (completed / n))
             bar = '█' * filled_length + ' ' * (bar_length - filled_length)
             
             # 두 줄을 업데이트: 이전 줄로 돌아가서 덮어쓰기
             sys.stdout.write(f'\r\033[1A' if i > 0 else '')  # 이전 줄로 이동 (두 번째부터)
-            sys.stdout.write(f'({completed:,}/{n:,}회 완료)\n진행률: [{bar}] {progress:.1f}%')
+            sys.stdout.write(f'({completed:,}/{n:,}회 완료)\n진행률: [{bar}] {progress:.1f}% | 경과 시간: {format_time(elapsed_time)}{eta_str}')
             sys.stdout.flush()
+    
+    total_time = time.time() - start_time
     
     if show_progress:
         print()  # 진행률 표시 후 줄바꿈
+        print(f"총 실행 시간: {format_time(total_time)}")
     
     return total_counts / Decimal(n)
 
@@ -61,6 +75,20 @@ def format_decimal_with_spaces(d: Decimal, precision=50):
     frac_part_spaced = " ".join([frac_part[i:i+3] for i in range(0, len(frac_part), 3)])
 
     return f"{int_part}.{frac_part_spaced}"
+
+def format_time(seconds):
+    """초를 읽기 쉬운 시간 형식으로 변환 (예: 1시간 23분 45초)"""
+    if seconds < 60:
+        return f"{seconds:.1f}초"
+    elif seconds < 3600:
+        minutes = int(seconds // 60)
+        secs = seconds % 60
+        return f"{minutes}분 {secs:.1f}초"
+    else:
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = seconds % 60
+        return f"{hours}시간 {minutes}분 {secs:.1f}초"
 
 try:
     n = int(input("몇 번 실행하시겠습니까: "))

@@ -1,4 +1,5 @@
 import random
+import sys
 from decimal import Decimal, getcontext
 
 # 소수점 정밀도 설정 (최대 52자리 이상)
@@ -23,12 +24,33 @@ def generate_multiple_rounds(n):
         counts.append(count)
     return counts
 
-def calculate_average_count(n):
+def calculate_average_count(n, show_progress=True):
     """메모리 최적화: count 리스트를 저장하지 않고 바로 합산"""
     total_counts = Decimal("0")
-    for _ in range(n):
+    
+    # 진행률 표시를 위한 설정
+    update_interval = max(1, n // 100) if n > 100 else 1  # 최대 100번 업데이트
+    
+    for i in range(n):
         _, _, count = generate_until_sum_exceeds_one()
         total_counts += Decimal(count)
+        
+        # 진행률 표시
+        if show_progress and (i + 1) % update_interval == 0 or i + 1 == n:
+            progress = ((i + 1) / n) * 100
+            completed = i + 1
+            bar_length = 40
+            filled_length = int(bar_length * (completed / n))
+            bar = '█' * filled_length + ' ' * (bar_length - filled_length)
+            
+            # 두 줄을 업데이트: 이전 줄로 돌아가서 덮어쓰기
+            sys.stdout.write(f'\r\033[1A' if i > 0 else '')  # 이전 줄로 이동 (두 번째부터)
+            sys.stdout.write(f'({completed:,}/{n:,}회 완료)\n진행률: [{bar}] {progress:.1f}%')
+            sys.stdout.flush()
+    
+    if show_progress:
+        print()  # 진행률 표시 후 줄바꿈
+    
     return total_counts / Decimal(n)
 
 def format_decimal_with_spaces(d: Decimal, precision=50):
